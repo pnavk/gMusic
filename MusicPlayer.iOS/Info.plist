@@ -27,7 +27,7 @@
 		<string>org-appextension-feature-password-management</string>
 	</array>
 	<key>MinimumOSVersion</key>
-	<string>7.0</string>
+	<string>9.3</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsArbitraryLoads</key>
