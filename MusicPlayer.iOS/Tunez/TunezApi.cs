@@ -24,7 +24,7 @@ namespace TunezApi
 
 			BaseAddress = new Uri (address);
 			CurrentAccount = new Account {
-				Identifier = "Tunez - " + address,
+				Identifier = this.Identifier
 			};
 			return CurrentAccount;
 		}

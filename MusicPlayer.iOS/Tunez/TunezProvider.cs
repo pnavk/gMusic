@@ -25,7 +25,7 @@ namespace TunezApi
 		}
 
 		public override string Email {
-			get { return Api.CurrentAccount?.Identifier; }
+			get { return Api.BaseAddress.ToString (); }
 		}
 
 		public override string Id {
