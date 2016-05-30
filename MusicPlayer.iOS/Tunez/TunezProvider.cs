@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using MusicPlayer;
 using MusicPlayer.Api;
 using MusicPlayer.Data;
+using MusicPlayer.Managers;
 using MusicPlayer.Models;
 using MusicPlayer.Models.Scrobbling;
 
@@ -15,7 +16,7 @@ namespace TunezApi
 	{
 		static readonly string CatalogCache = System.IO.Path.Combine (Locations.LibDir, "tunezprovider.catalog");
 
-		SimpleAuth.Api Api {
+		SimpleAuth.AuthenticatedApi Api {
 			get;
 		}
 
@@ -24,11 +25,11 @@ namespace TunezApi
 		}
 
 		public override string Email {
-			get { return "test@superfakemale.com"; }
+			get { return Api.CurrentAccount?.Identifier; }
 		}
 
 		public override string Id {
-			get { return Api.Identifier; }
+			get { return Api.CurrentAccount?.Identifier; }
 		}
 
 		public override bool RequiresAuthentication {
@@ -43,7 +44,7 @@ namespace TunezApi
 			get { return ServiceType.Tunez; }
 		}
 
-		public TunezProvider (SimpleAuth.Api api)
+		public TunezProvider (SimpleAuth.AuthenticatedApi api)
 			: base (api)
 		{
 			Api = api;
@@ -109,6 +110,8 @@ namespace TunezApi
 				}
 				return track;
 			}).ToList ();
+
+			ApiManager.Shared.DeleteApi(Api);
 			await ProcessTracks (tracks);
 			await FinalizeProcessing (Id);
 			MusicPlayer.Managers.ApiManager.Shared.SaveApi(Api);
@@ -168,10 +171,14 @@ namespace TunezApi
 		{
 			throw new NotImplementedException();
 		}
-		public override Task Logout()
+
+		public override async Task Logout()
 		{
-			return base.Logout();
+			ApiManager.Shared.DeleteApi(Api);
+			await RemoveApi(Id);
+			Api.ResetData();
 		}
+
 		public override Task<bool> MoveSong(PlaylistSong song, string previousId, string nextId, int index)
 		{
 			throw new NotImplementedException();

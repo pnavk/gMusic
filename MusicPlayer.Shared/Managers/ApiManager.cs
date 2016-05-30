@@ -181,7 +181,20 @@ namespace MusicPlayer.Managers
 			Collection.Add(api.Identifier, provider);
 
 			return provider;
+		}
 
+		public void DeleteApi(SimpleAuth.Api api)
+		{
+			var id = int.Parse(api.Identifier);
+			var record = new ApiModel
+			{
+				Id = id,
+				Service = GetServiceType(api),
+				DeviceId = api.DeviceId,
+				ExtraData = api.ExtraDataString,
+			};
+			Collection.Remove(api.Identifier);
+			Settings.DeleteApiModel(record);
 		}
 
 		public void SaveApi(SimpleAuth.Api api)

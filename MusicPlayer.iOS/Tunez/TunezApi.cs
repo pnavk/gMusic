@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
+using MusicPlayer.iOS;
 using SimpleAuth;
 
 namespace TunezApi
@@ -9,17 +10,26 @@ namespace TunezApi
 		public TunezApi (string identifier, System.Net.Http.HttpMessageHandler handler)
 			:  base (identifier, handler)
 		{
-			BaseAddress = new Uri ("http://127.0.0.1:51986");
+			
 		}
 
-		protected override Task<Account> PerformAuthenticate()
+		protected override async Task<Account> PerformAuthenticate ()
 		{
-			return Task.FromResult (new Account {
-				Identifier = Identifier,
-			});
+			string address;
+			try {
+				address = await PopupManager.Shared.GetTextInput ("Enter Tunez server address", "http://test.com:51986");
+			} catch (OperationCanceledException) {
+				return null;
+			}
+
+			BaseAddress = new Uri (address);
+			CurrentAccount = new Account {
+				Identifier = "Tunez - " + address,
+			};
+			return CurrentAccount;
 		}
 
-		protected override Task<bool> RefreshAccount(Account account)
+		protected override Task<bool> RefreshAccount (Account account)
 		{
 			return Task.FromResult (true);
 		}

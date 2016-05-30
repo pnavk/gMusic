@@ -116,9 +116,9 @@ namespace MusicPlayer.Api
 
 		public abstract string Email { get; }
 
-		public virtual async Task Logout()
+		public virtual Task Logout()
 		{
-			
+			return Task.CompletedTask;
 		}
 
 		//Static stuff used for processing data
