@@ -111,7 +111,6 @@ namespace TunezApi
 				return track;
 			}).ToList ();
 
-			ApiManager.Shared.DeleteApi(Api);
 			await ProcessTracks (tracks);
 			await FinalizeProcessing (Id);
 			MusicPlayer.Managers.ApiManager.Shared.SaveApi(Api);
