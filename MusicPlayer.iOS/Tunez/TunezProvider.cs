@@ -16,7 +16,7 @@ namespace TunezApi
 	{
 		static readonly string CatalogCache = System.IO.Path.Combine (Locations.LibDir, "tunezprovider.catalog");
 
-		SimpleAuth.AuthenticatedApi Api {
+		TunezApi Api {
 			get;
 		}
 
@@ -25,11 +25,11 @@ namespace TunezApi
 		}
 
 		public override string Email {
-			get { return Api.BaseAddress.ToString (); }
+			get { return Api?.CurrentAccount?.BaseAddress?.ToString () ?? "Tunez"; }
 		}
 
 		public override string Id {
-			get { return Api.CurrentAccount?.Identifier; }
+			get { return Api.Identifier; }
 		}
 
 		public override bool RequiresAuthentication {
@@ -37,21 +37,17 @@ namespace TunezApi
 		}
 
 		public Tunez.TunezServer Server {
-			get;
+			get; private set;
 		}
 
 		public override ServiceType ServiceType {
 			get { return ServiceType.Tunez; }
 		}
 
-		public TunezProvider (SimpleAuth.AuthenticatedApi api)
+		public TunezProvider (TunezApi api)
 			: base (api)
 		{
 			Api = api;
-			Server = new Tunez.TunezServer (new Tunez.ServerDetails {
-				Hostname = Api.BaseAddress.Host,
-				Port = api.BaseAddress.Port,
-			});
 		}
 
 		public async override Task<DownloadUrlData> GetDownloadUri(Track track)
@@ -68,16 +64,24 @@ namespace TunezApi
 			var fetchTrackMessage = new Tunez.FetchTrackMessage { UUID = int.Parse (track.Id), Offset = 0 };
 			var message = Tunez.Messages.FetchTrack + Newtonsoft.Json.JsonConvert.SerializeObject (fetchTrackMessage);
 
-			return Task.FromResult (new Uri (Api.BaseAddress, "?" + Uri.EscapeUriString (message)));
+			return Task.FromResult (new Uri (Api.CurrentAccount.BaseAddress, "?" + Uri.EscapeUriString (message)));
 		}
 
-		public override Task<bool> Resync()
+		public async override Task<bool> Resync()
 		{
-			return SyncDatabase ();
+			await RemoveTracks (Id);
+			return await Sync ();
 		}
 
 		protected async override Task<bool> Sync()
 		{
+			if (Server == null) {
+				Server = new Tunez.TunezServer (new Tunez.ServerDetails {
+					Hostname = Api.CurrentAccount.BaseAddress.Host,
+					Port = Api.CurrentAccount.BaseAddress.Port,
+				});
+			}
+
 			var catalog = await Server.FetchCatalog (CatalogCache, System.Threading.CancellationToken.None);
 			var tracks = catalog.Select (t => { 
 				var track = new FullTrackData (t.Name, t.TrackArtist, t.AlbumArtist, t.Album, "Genre") {
@@ -97,7 +101,7 @@ namespace TunezApi
 					};
 					var message = Tunez.Messages.FetchAlbumArt + Newtonsoft.Json.JsonConvert.SerializeObject (fetchAlbumArtMessage);
 					track.AlbumArtwork = new List<AlbumArtwork> {
-						new AlbumArtwork { Url = Api.BaseAddress + "?" + Uri.EscapeUriString (message) }
+						new AlbumArtwork { Url = Api.CurrentAccount.BaseAddress + "?" + Uri.EscapeUriString (message) }
 					};
 
 					var fetchArtistArtMessage = new Tunez.FetchArtistArtMessage {
@@ -105,7 +109,7 @@ namespace TunezApi
 					};
 					message = Tunez.Messages.FetchArtistArt + Newtonsoft.Json.JsonConvert.SerializeObject (fetchArtistArtMessage);
 					track.ArtistArtwork = new List<ArtistArtwork> {
-						new ArtistArtwork { Url = Api.BaseAddress + "?" + Uri.EscapeUriString (message) }
+						new ArtistArtwork { Url = Api.CurrentAccount.BaseAddress + "?" + Uri.EscapeUriString (message) }
 					};
 				}
 				return track;

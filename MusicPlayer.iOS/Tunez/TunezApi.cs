@@ -5,12 +5,26 @@ using SimpleAuth;
 
 namespace TunezApi
 {
+	public class TunezAccount : Account
+	{
+		public Uri BaseAddress {
+			get { return new Uri (Url); }
+		}
+
+		public string Url { get; set;}
+	}
+
 	public class TunezApi : AuthenticatedApi
 	{
+		public new TunezAccount CurrentAccount {
+			get { return (TunezAccount) base.CurrentAccount; }
+			set { base.CurrentAccount = value; }
+		}
+
 		public TunezApi (string identifier, System.Net.Http.HttpMessageHandler handler)
 			:  base (identifier, handler)
 		{
-			
+			CurrentAccount = GetAccount<TunezAccount> (identifier);
 		}
 
 		protected override async Task<Account> PerformAuthenticate ()
@@ -19,13 +33,15 @@ namespace TunezApi
 			try {
 				address = await PopupManager.Shared.GetTextInput ("Enter Tunez server address", "http://test.com:51986");
 			} catch (OperationCanceledException) {
+				CurrentAccount = null;
 				return null;
 			}
 
-			BaseAddress = new Uri (address);
-			CurrentAccount = new Account {
-				Identifier = this.Identifier
+			CurrentAccount = new TunezAccount {
+				Identifier = this.Identifier,
+				Url = address,
 			};
+			SaveAccount (CurrentAccount);
 			return CurrentAccount;
 		}
 
